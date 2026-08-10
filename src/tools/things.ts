@@ -30,7 +30,7 @@ export function registerThingTools(server: McpServer): void {
 		{
 			title: "Add Thing to Course",
 			description:
-				"Add a new thing (item) to a course at a specific level index. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call memrise_courses_get_columns first.",
+				"Add a new thing (item) to a course at a specific level index. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call memrise_courses_get_columns first. WARNING: levelIndex skips empty levels, causing off-by-N errors. SAFER PATTERN: resolve exact levelId via memrise_levels_list and use memrise_things_add_to_level instead.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				columns: z.record(z.string()).describe("Item columns data."),
