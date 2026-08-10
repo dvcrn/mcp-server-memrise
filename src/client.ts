@@ -13,18 +13,22 @@ function optionalEnv(name: string): string | undefined {
 	return value ? value : undefined;
 }
 
-export function createAuthenticatedMemriseClient(): MemriseClient {
-	const client = new MemriseClient(
-		requiredEnv("MEMRISE_USERNAME"),
-		requiredEnv("MEMRISE_PASSWORD"),
-		optionalEnv("MEMRISE_CLIENT_ID"),
-	);
-	return client;
+let sharedClient: MemriseClient | null = null;
+
+export function getAuthenticatedMemriseClient(): MemriseClient {
+	if (!sharedClient) {
+		sharedClient = new MemriseClient(
+			requiredEnv("MEMRISE_USERNAME"),
+			requiredEnv("MEMRISE_PASSWORD"),
+			optionalEnv("MEMRISE_CLIENT_ID"),
+		);
+	}
+	return sharedClient;
 }
 
 export async function withMemrise<T>(
 	callback: (client: MemriseClient) => Promise<T>,
 ): Promise<T> {
-	const client = createAuthenticatedMemriseClient();
+	const client = getAuthenticatedMemriseClient();
 	return callback(client);
 }
