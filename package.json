@@ -4,7 +4,7 @@
   "description": "Expose the Memrise API as an MCP server",
   "type": "module",
   "bin": {
-    "mcp-server-memrise": "./dist/index.js"
+    "mcp-server-memrise": "dist/index.js"
   },
   "files": [
     "dist",
