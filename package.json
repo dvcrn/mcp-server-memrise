@@ -1,7 +1,7 @@
 {
   "name": "mcp-server-memrise",
   "version": "0.1.1",
-  "description": "Expose the Memrise API as an MCP server",
+  "description": "MCP server to manage Memrise courses, levels, and words.",
   "type": "module",
   "bin": {
     "mcp-server-memrise": "dist/index.js"

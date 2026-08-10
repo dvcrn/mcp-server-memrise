@@ -1,8 +1,8 @@
 # mcp-server-memrise
 
-`mcp-server-memrise` exposes the Memrise teaching API as an MCP server.
+`mcp-server-memrise` is an MCP server to manage Memrise courses, levels, and words.
 
-It is built on top of the [`memcli`](https://github.com/dvcrn/memcli) project and uses the published [`memrise`](https://www.npmjs.com/package/memrise) package to access the Memrise API for teaching and course management workflows.
+It is built on top of the [`memcli`](https://github.com/dvcrn/memcli) project and uses the published [`memrise`](https://www.npmjs.com/package/memrise) package to interact with Memrise for teaching and course management workflows.
 
 Deploy this server directly to [MCP Nest](https://mcpnest.dev)
 
