@@ -104,7 +104,8 @@ export function registerLevelTools(server: McpServer): void {
 		"memrise_levels_get_items",
 		{
 			title: "Get Level Items",
-			description: "Get items for a specific level by its index. WARNING: levelIndex skips empty levels, causing off-by-N errors. This tool is risky if a course has empty levels.",
+			description:
+				"Get items for a specific level by its index. WARNING: levelIndex skips empty levels, causing off-by-N errors. This tool is risky if a course has empty levels.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				levelIndex: z

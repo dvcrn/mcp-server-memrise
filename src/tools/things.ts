@@ -72,4 +72,26 @@ export function registerThingTools(server: McpServer): void {
 				)) as unknown as Record<string, unknown>,
 			),
 	);
+
+	server.registerTool(
+		"memrise_things_delete_from_level",
+		{
+			title: "Delete Thing from Level",
+			description:
+				"Remove a thing (item) from a specific level. Requires the level ID and thing ID. Use memrise_levels_list / memrise_levels_get_items to resolve exact IDs before calling this.",
+			inputSchema: {
+				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				thingId: z.union([z.string(), z.number()]).describe("Thing ID."),
+			},
+			annotations: {
+				destructiveHint: true,
+			},
+		},
+		async ({ levelId, thingId }) =>
+			jsonResult(
+				(await withMemrise((client) =>
+					client.deleteThingFromLevel(levelId, thingId),
+				)) as unknown as Record<string, unknown>,
+			),
+	);
 }
