@@ -6,3 +6,4 @@ dist
 coverage
 fnox.toml
 .codex
+.mcp.json
