@@ -5,7 +5,7 @@ import { jsonResult } from "../results";
 
 export function registerCourseTools(server: McpServer): void {
 	server.registerTool(
-		"memrise_courses_list",
+		"courses_list",
 		{
 			title: "List Memrise Courses",
 			description:
@@ -37,7 +37,7 @@ export function registerCourseTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_courses_get",
+		"courses_get",
 		{
 			title: "Get Memrise Course by ID",
 			description: "Get a course from your dashboard by its ID.",
@@ -57,7 +57,7 @@ export function registerCourseTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_courses_get_by_slug",
+		"courses_get_by_slug",
 		{
 			title: "Get Memrise Course by Slug",
 			description: "Get a course from your dashboard by its slug.",
@@ -77,7 +77,7 @@ export function registerCourseTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_courses_get_columns",
+		"courses_get_columns",
 		{
 			title: "Get Course Columns",
 			description:
@@ -98,7 +98,7 @@ export function registerCourseTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_courses_get_items",
+		"courses_get_items",
 		{
 			title: "Get Course Items",
 			description: "Get all learnable items for a course.",

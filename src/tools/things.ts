@@ -5,16 +5,20 @@ import { jsonResult } from "../results";
 
 export function registerThingTools(server: McpServer): void {
 	server.registerTool(
-		"memrise_things_add_to_level",
+		"things_add_to_level",
 		{
 			title: "Add Thing to Level",
 			description:
-				"Add a new thing (item) to a specific level by its ID. CRITICAL: Memrise expects numeric keys for columns (e.g. '1', '2'), not strings like 'term'. You MUST call memrise_courses_get_columns first to map fields to numeric IDs.",
+				"Add a new thing (item) to a specific level by its ID. CRITICAL: Memrise expects numeric keys for columns (e.g. '1', '2'), not strings like 'term'. You MUST call courses_get_columns first to map fields to numeric IDs.",
 			inputSchema: {
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				columns: z
 					.record(z.string())
 					.describe("Item columns data. e.g. {'1': 'hola', '2': 'hello'}"),
+			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: false,
 			},
 		},
 		async ({ levelId, columns }) =>
@@ -26,11 +30,11 @@ export function registerThingTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_things_add_to_course",
+		"things_add_by_level_index",
 		{
-			title: "Add Thing to Course",
+			title: "Add Thing by Level Index",
 			description:
-				"Add a new thing (item) to a course at a specific level index. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call memrise_courses_get_columns first. WARNING: levelIndex skips empty levels, causing off-by-N errors. SAFER PATTERN: resolve exact levelId via memrise_levels_list and use memrise_things_add_to_level instead.",
+				"Add a new thing (item) to a course at a specific level index. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call courses_get_columns first. WARNING: levelIndex skips empty levels, causing off-by-N errors. SAFER PATTERN: resolve exact levelId via levels_list and use things_add_to_level instead.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				columns: z.record(z.string()).describe("Item columns data."),
@@ -40,6 +44,10 @@ export function registerThingTools(server: McpServer): void {
 					.nonnegative()
 					.optional()
 					.describe("Level index (0-based). Defaults to 0."),
+			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: false,
 			},
 		},
 		async ({ courseId, columns, levelIndex }) =>
@@ -51,7 +59,7 @@ export function registerThingTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_things_get_learnable",
+		"learnables_get",
 		{
 			title: "Get Learnable",
 			description:
@@ -74,11 +82,11 @@ export function registerThingTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_things_delete_from_level",
+		"things_delete_from_level",
 		{
 			title: "Delete Thing from Level",
 			description:
-				"Remove a thing (item) from a specific level. Requires the level ID and thing ID. Use memrise_levels_list / memrise_levels_get_items to resolve exact IDs before calling this.",
+				"Remove a thing (item) from a specific level. Requires the level ID and thing ID. Use levels_list / levels_get_items_by_index to resolve exact IDs before calling this.",
 			inputSchema: {
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				thingId: z.union([z.string(), z.number()]).describe("Thing ID."),

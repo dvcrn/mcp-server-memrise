@@ -5,7 +5,7 @@ import { jsonResult } from "../results";
 
 export function registerPoolTools(server: McpServer): void {
 	server.registerTool(
-		"memrise_pools_get",
+		"pools_get",
 		{
 			title: "Get Pool",
 			description:
@@ -26,11 +26,11 @@ export function registerPoolTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_pools_search",
+		"pools_search",
 		{
 			title: "Search Pool",
 			description:
-				"Search for items in a pool (e.g. to avoid duplicates). CRITICAL: You must search using numeric column keys (e.g., {'1': 'Hola'}). Fetch course columns with memrise_courses_get_columns first.",
+				"Search for items in a pool (e.g. to avoid duplicates). CRITICAL: You must search using numeric column keys (e.g., {'1': 'Hola'}). Fetch course columns with courses_get_columns first.",
 			inputSchema: {
 				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
 				columns: z

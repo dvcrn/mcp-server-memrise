@@ -5,7 +5,7 @@ import { jsonResult } from "../results";
 
 export function registerLevelTools(server: McpServer): void {
 	server.registerTool(
-		"memrise_levels_list",
+		"levels_list",
 		{
 			title: "List Course Levels",
 			description:
@@ -35,11 +35,11 @@ export function registerLevelTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_levels_create",
+		"levels_create",
 		{
 			title: "Create Level",
 			description:
-				"Add a new level to a course. Do not guess Course or Pool IDs. Use memrise_courses_list or memrise_levels_list to resolve exact IDs before calling this.",
+				"Add a new level to a course. Do not guess Course or Pool IDs. Use courses_list or levels_list to resolve exact IDs before calling this.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				poolId: z
@@ -53,6 +53,10 @@ export function registerLevelTools(server: McpServer): void {
 					.optional()
 					.describe("Level kind. Defaults to 'things'."),
 			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: false,
+			},
 		},
 		async ({ courseId, poolId, kind }) =>
 			jsonResult(
@@ -63,13 +67,17 @@ export function registerLevelTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_levels_update_title",
+		"levels_update_title",
 		{
 			title: "Update Level Title",
 			description: "Update the title of a level.",
 			inputSchema: {
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				title: z.string().min(1).describe("New level title."),
+			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: true,
 			},
 		},
 		async ({ levelId, title }) =>
@@ -81,7 +89,7 @@ export function registerLevelTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_levels_delete",
+		"levels_delete",
 		{
 			title: "Delete Level",
 			description: "Delete a level.",
@@ -101,9 +109,9 @@ export function registerLevelTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"memrise_levels_get_items",
+		"levels_get_items_by_index",
 		{
-			title: "Get Level Items",
+			title: "Get Level Items by Index",
 			description:
 				"Get items for a specific level by its index. WARNING: levelIndex skips empty levels, causing off-by-N errors. This tool is risky if a course has empty levels.",
 			inputSchema: {
