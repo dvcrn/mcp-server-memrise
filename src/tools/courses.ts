@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
+import { ID_GLOSSARY, normalizeLearnable } from "../ids";
 import { jsonResult } from "../results";
 
 export function registerCourseTools(server: McpServer): void {
@@ -101,7 +102,7 @@ export function registerCourseTools(server: McpServer): void {
 		"courses_get_items",
 		{
 			title: "Get Course Items",
-			description: "Get all learnable items for a course.",
+			description: `Get all learnable items for a course. Returns learnableIds, NOT thingIds — you cannot pass these to things_delete_from_level. ${ID_GLOSSARY}`,
 			inputSchema: {
 				id: z.union([z.string(), z.number()]).describe("Course ID."),
 				limit: z
@@ -115,11 +116,11 @@ export function registerCourseTools(server: McpServer): void {
 				readOnlyHint: true,
 			},
 		},
-		async ({ id, limit }) =>
-			jsonResult(
-				(await withMemrise((client) =>
-					client.getCourseItems(id, limit),
-				)) as unknown as Record<string, unknown>,
-			),
+		async ({ id, limit }) => {
+			const items = await withMemrise((client) =>
+				client.getCourseItems(id, limit),
+			);
+			return jsonResult(items.map(normalizeLearnable));
+		},
 	);
 }

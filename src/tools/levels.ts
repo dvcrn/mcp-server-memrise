@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
+import { ID_GLOSSARY, normalizeLearnable, normalizeLevel } from "../ids";
 import { jsonResult } from "../results";
 
 export function registerLevelTools(server: McpServer): void {
@@ -8,8 +9,7 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_list",
 		{
 			title: "List Course Levels",
-			description:
-				"List all levels in a course. Use this to discover exact Level IDs and Pool IDs. Memrise Levels are backed by a Pool. Do not guess IDs.",
+			description: `List all levels in a course. Use this to discover exact levelIds, poolIds and learnableIds. Memrise Levels are backed by a Pool. Do not guess IDs. ${ID_GLOSSARY}`,
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				slug: z.string().optional().describe("Optional course slug."),
@@ -23,14 +23,13 @@ export function registerLevelTools(server: McpServer): void {
 			},
 		},
 		async ({ courseId, slug, includeEmpty }) => {
-			return jsonResult(
-				(await withMemrise(async (client) => {
-					if (includeEmpty) {
-						return await client.getCourseLevelsIncludingEmpty(courseId, slug);
-					}
-					return await client.getCourseLevels(courseId, slug);
-				})) as unknown as Array<unknown>,
-			);
+			const levels = await withMemrise(async (client) => {
+				if (includeEmpty) {
+					return await client.getCourseLevelsIncludingEmpty(courseId, slug);
+				}
+				return await client.getCourseLevels(courseId, slug);
+			});
+			return jsonResult(levels.map(normalizeLevel));
 		},
 	);
 
@@ -112,8 +111,7 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_get_items_by_index",
 		{
 			title: "Get Level Items by Index",
-			description:
-				"Get items for a specific level by its index. WARNING: levelIndex skips empty levels, causing off-by-N errors. This tool is risky if a course has empty levels.",
+			description: `Get items for a specific level by its index. Returns learnableIds, NOT thingIds — you cannot pass these to things_delete_from_level. WARNING: levelIndex skips empty levels, causing off-by-N errors. This tool is risky if a course has empty levels. ${ID_GLOSSARY}`,
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				levelIndex: z
@@ -133,11 +131,11 @@ export function registerLevelTools(server: McpServer): void {
 				readOnlyHint: true,
 			},
 		},
-		async ({ courseId, levelIndex, limit }) =>
-			jsonResult(
-				(await withMemrise((client) =>
-					client.getLevelItems(courseId, levelIndex ?? 0, limit),
-				)) as unknown as Array<unknown>,
-			),
+		async ({ courseId, levelIndex, limit }) => {
+			const items = await withMemrise((client) =>
+				client.getLevelItems(courseId, levelIndex ?? 0, limit),
+			);
+			return jsonResult(items.map(normalizeLearnable));
+		},
 	);
 }

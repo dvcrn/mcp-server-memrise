@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
+import { ID_GLOSSARY, normalizeSearchHit } from "../ids";
 import { jsonResult } from "../results";
 
 export function registerPoolTools(server: McpServer): void {
@@ -29,8 +30,7 @@ export function registerPoolTools(server: McpServer): void {
 		"pools_search",
 		{
 			title: "Search Pool",
-			description:
-				"Search for items in a pool (e.g. to avoid duplicates). CRITICAL: You must search using numeric column keys (e.g., {'1': 'Hola'}). Fetch course columns with courses_get_columns first.",
+			description: `Search for items in a pool (e.g. to avoid duplicates). Returns thingIds, which are what things_delete_from_level requires. CRITICAL: You must search using numeric column keys (e.g., {'1': 'Hola'}). Fetch course columns with courses_get_columns first. ${ID_GLOSSARY}`,
 			inputSchema: {
 				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
 				columns: z
@@ -46,16 +46,16 @@ export function registerPoolTools(server: McpServer): void {
 				readOnlyHint: true,
 			},
 		},
-		async ({ poolId, columns, excludeThingIds, originalOnly }) =>
-			jsonResult(
-				(await withMemrise((client) =>
-					client.searchPool(
-						poolId,
-						columns,
-						excludeThingIds ?? [],
-						originalOnly ?? false,
-					),
-				)) as unknown as Record<string, unknown>,
-			),
+		async ({ poolId, columns, excludeThingIds, originalOnly }) => {
+			const res = await withMemrise((client) =>
+				client.searchPool(
+					poolId,
+					columns,
+					excludeThingIds ?? [],
+					originalOnly ?? false,
+				),
+			);
+			return jsonResult(res.result.map(normalizeSearchHit));
+		},
 	);
 }

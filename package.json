@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-memrise",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server to manage Memrise courses, levels, and words.",
   "type": "module",
   "bin": {
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.1",
-    "memrise": "0.5.0",
+    "memrise": "^0.6.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

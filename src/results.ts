@@ -1,4 +1,4 @@
-export function jsonResult(data: Record<string, unknown> | Array<unknown>) {
+export function jsonResult(data: unknown) {
 	return {
 		content: [
 			{
