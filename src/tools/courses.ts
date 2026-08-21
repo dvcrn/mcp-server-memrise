@@ -1,7 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
-import { normalizeLearnable } from "../ids";
 import { jsonResult } from "../results";
 
 export function registerCourseTools(server: McpServer): void {
@@ -42,7 +41,8 @@ export function registerCourseTools(server: McpServer): void {
 		"courses_get",
 		{
 			title: "Get Memrise Course by ID",
-			description: "Get a course from your dashboard by its ID.",
+			description:
+				"Get one course by its courseId, including its name and slug. Course URLs are /course/{courseId}/{slug}/, so the ID is in the link.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 			},
@@ -54,26 +54,6 @@ export function registerCourseTools(server: McpServer): void {
 			jsonResult(
 				(await withMemrise((client) =>
 					client.getCourseById(courseId),
-				)) as unknown as Record<string, unknown>,
-			),
-	);
-
-	server.registerTool(
-		"courses_get_by_slug",
-		{
-			title: "Get Memrise Course by Slug",
-			description: "Get a course from your dashboard by its slug.",
-			inputSchema: {
-				slug: z.string().min(1).describe("Course slug."),
-			},
-			annotations: {
-				readOnlyHint: true,
-			},
-		},
-		async ({ slug }) =>
-			jsonResult(
-				(await withMemrise((client) =>
-					client.getCourseBySlug(slug),
 				)) as unknown as Record<string, unknown>,
 			),
 	);
@@ -104,7 +84,7 @@ export function registerCourseTools(server: McpServer): void {
 		{
 			title: "Get Course Items",
 			description:
-				"Get every item in a course, across all levels. Each item carries both its learnableId and its thingId. Prefer levels_list_things when you only need one level.",
+				"Get every item in a course in one call, each tagged with the levelIds it belongs to, so a result can be passed straight to things_delete_from_level. Prefer levels_list_things when you only care about one level.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				limit: z
@@ -122,7 +102,7 @@ export function registerCourseTools(server: McpServer): void {
 			const items = await withMemrise((client) =>
 				client.getCourseItems(courseId, limit),
 			);
-			return jsonResult(items.map(normalizeLearnable));
+			return jsonResult(items);
 		},
 	);
 }
