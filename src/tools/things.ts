@@ -4,18 +4,11 @@ import type { BulkAddResponse } from "memrise/dist/types";
 import { z } from "zod";
 import { withMemrise } from "../client";
 import {
-	ID_GLOSSARY,
 	normalizeLearnable,
 	normalizeThing,
+	LEVEL_ID_HINT,
 } from "../ids";
 import { jsonResult } from "../results";
-
-const bulkDelimiterSchema = z
-	.enum(["comma", "tab", "semicolon"])
-	.optional()
-	.describe(
-		"Delimiter between column values. Defaults to comma. Values must not contain the chosen delimiter or newlines.",
-	);
 
 const bulkItemsSchema = z
 	.array(z.union([z.record(z.string()), z.array(z.string())]))
@@ -36,9 +29,11 @@ export function registerThingTools(server: McpServer): void {
 		"things_add_to_level",
 		{
 			title: "Add Thing to Level",
-			description: `Add one thing (item) to a level. Columns may be given by name ({'Word': 'hola'}) or by numeric key ({'1': 'hola'}); names are resolved for you. Returns the new thingId. ${ID_GLOSSARY}`,
+			description: `Add one thing (item) to a level. Columns may be given by name ({'Word': 'hola'}) or by numeric key ({'1': 'hola'}); names are resolved for you. Returns the new thingId.`,
 			inputSchema: {
-				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
 				columns: z
 					.record(z.string())
 					.describe("Column values, by name or numeric key. e.g. {'Word': 'hola', 'Definition': 'hello'}"),
@@ -91,20 +86,21 @@ export function registerThingTools(server: McpServer): void {
 		"things_bulk_add_to_level",
 		{
 			title: "Bulk Add Things to Level",
-			description: `Add many things (items) to a level in one request. Prefer this over calling things_add_to_level in a loop. Columns may be given by name ({'Word': 'hola'}) or by numeric key. Returns the new thingIds. ${ID_GLOSSARY}`,
+			description: `Add many things (items) to a level in one request. Prefer this over calling things_add_to_level in a loop. Columns may be given by name ({'Word': 'hola'}) or by numeric key. Returns the new thingIds.`,
 			inputSchema: {
-				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
 				items: bulkItemsSchema,
-				delimiter: bulkDelimiterSchema,
 			},
 			annotations: {
 				readOnlyHint: false,
 				idempotentHint: false,
 			},
 		},
-		async ({ levelId, items, delimiter }) => {
+		async ({ levelId, items }) => {
 			const res = await withMemrise((client) =>
-				client.bulkAddToLevel(levelId, items, delimiter),
+				client.bulkAddToLevel(levelId, items),
 			);
 			return bulkAddResult(res);
 		},
@@ -127,16 +123,15 @@ export function registerThingTools(server: McpServer): void {
 					.describe(
 						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
 					),
-				delimiter: bulkDelimiterSchema,
 			},
 			annotations: {
 				readOnlyHint: false,
 				idempotentHint: false,
 			},
 		},
-		async ({ courseId, items, levelNumber, delimiter }) => {
+		async ({ courseId, items, levelNumber }) => {
 			const res = await withMemrise((client) =>
-				client.bulkAddToCourse(courseId, items, levelNumber ?? 1, delimiter),
+				client.bulkAddToCourse(courseId, items, levelNumber ?? 1),
 			);
 			return bulkAddResult(res);
 		},
@@ -146,20 +141,19 @@ export function registerThingTools(server: McpServer): void {
 		"things_bulk_add_to_pool",
 		{
 			title: "Bulk Add Things to Pool",
-			description: `Add many things (items) to a pool without attaching them to any level. Use things_bulk_add_to_level if the items should appear in a lesson. Columns may be given by name or numeric key. ${ID_GLOSSARY}`,
+			description: `Add many things (items) to a pool without attaching them to any level. Use things_bulk_add_to_level if the items should appear in a lesson. Columns may be given by name or numeric key.`,
 			inputSchema: {
 				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
 				items: bulkItemsSchema,
-				delimiter: bulkDelimiterSchema,
 			},
 			annotations: {
 				readOnlyHint: false,
 				idempotentHint: false,
 			},
 		},
-		async ({ poolId, items, delimiter }) => {
+		async ({ poolId, items }) => {
 			const res = await withMemrise((client) =>
-				client.bulkAddToPool(poolId, items, delimiter),
+				client.bulkAddToPool(poolId, items),
 			);
 			return bulkAddResult(res);
 		},
@@ -169,7 +163,7 @@ export function registerThingTools(server: McpServer): void {
 		"learnables_get",
 		{
 			title: "Get Learnable",
-			description: `Get one learnable item by its learnableId. The response includes the matching thingId. ${ID_GLOSSARY}`,
+			description: `Get one learnable item by its learnableId. The response includes the matching thingId.`,
 			inputSchema: {
 				learnableId: z
 					.union([z.string(), z.number()])
@@ -192,12 +186,15 @@ export function registerThingTools(server: McpServer): void {
 		"things_delete_from_level",
 		{
 			title: "Delete Thing from Level",
-			description: `Remove a thing (item) from a specific level. Requires a thingId (from levels_list_things, pools_search or things_add_to_level) — passing a learnableId will fail. Confirms the thing is in the level before deleting and that it is gone afterwards, so a reported success means the item is really gone. ${ID_GLOSSARY}`,
+			description:
+				"Remove an item from a level. Requires a thingId, from levels_list_things or an add call — a learnableId is rejected. Confirms the item is in the level before deleting and gone afterwards, so success means it is really gone.",
 			inputSchema: {
 				courseId: z
 					.union([z.string(), z.number()])
 					.describe("Course ID owning the level. Used to verify the delete."),
-				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
 				thingId: z
 					.union([z.string(), z.number()])
 					.describe("Thing ID (NOT a learnable ID)."),
@@ -218,7 +215,7 @@ export function registerThingTools(server: McpServer): void {
 				const before = await client.getLevelThingIds(courseId, levelId);
 				if (!before.some((id) => String(id) === wanted)) {
 					throw new Error(
-						`thingId ${wanted} is not in level ${levelId}. Nothing was deleted. Use levels_list_things to see what is there. ${ID_GLOSSARY}`,
+						`thingId ${wanted} is not in level ${levelId}. Nothing was deleted. Use levels_list_things to see what is there.`,
 					);
 				}
 

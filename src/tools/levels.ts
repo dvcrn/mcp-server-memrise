@@ -2,10 +2,10 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
 import {
-	ID_GLOSSARY,
 	normalizeLearnable,
 	normalizeLevel,
 	normalizeLevelThing,
+	LEVEL_ID_HINT,
 } from "../ids";
 import { jsonResult } from "../results";
 
@@ -14,10 +14,9 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_list",
 		{
 			title: "List Course Levels",
-			description: `List a course's levels with their levelIds, poolIds and level numbers. Start here to find the levelId other tools need. Levels with no items are omitted. ${ID_GLOSSARY}`,
+			description: `List a course's levels with their levelIds, poolIds and level numbers. Start here to find the levelId other tools need. Levels with no items are omitted.`,
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				slug: z.string().optional().describe("Optional course slug."),
 				includeEmpty: z
 					.boolean()
 					.optional()
@@ -27,12 +26,12 @@ export function registerLevelTools(server: McpServer): void {
 				readOnlyHint: true,
 			},
 		},
-		async ({ courseId, slug, includeEmpty }) => {
+		async ({ courseId, includeEmpty }) => {
 			const levels = await withMemrise(async (client) => {
 				if (includeEmpty) {
-					return await client.getCourseLevelsIncludingEmpty(courseId, slug);
+					return await client.getCourseLevelsIncludingEmpty(courseId);
 				}
-				return await client.getCourseLevels(courseId, slug);
+				return await client.getCourseLevels(courseId);
 			});
 			return jsonResult(levels.map(normalizeLevel));
 		},
@@ -52,19 +51,15 @@ export function registerLevelTools(server: McpServer): void {
 					.describe(
 						"Pool ID. If omitted, uses the pool ID from the first level.",
 					),
-				kind: z
-					.string()
-					.optional()
-					.describe("Level kind. Defaults to 'things'."),
 			},
 			annotations: {
 				readOnlyHint: false,
 				idempotentHint: false,
 			},
 		},
-		async ({ courseId, poolId, kind }) => {
+		async ({ courseId, poolId }) => {
 			const res = await withMemrise((client) =>
-				client.addLevelToCourse(courseId, poolId, kind),
+				client.addLevelToCourse(courseId, poolId),
 			);
 			if (!res.levelId) {
 				throw new Error(
@@ -81,7 +76,9 @@ export function registerLevelTools(server: McpServer): void {
 			title: "Update Level Title",
 			description: "Update the title of a level.",
 			inputSchema: {
-				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
 				title: z.string().min(1).describe("New level title."),
 			},
 			annotations: {
@@ -103,7 +100,9 @@ export function registerLevelTools(server: McpServer): void {
 			title: "Delete Level",
 			description: "Delete a level.",
 			inputSchema: {
-				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
 			},
 			annotations: {
 				destructiveHint: true,
@@ -121,10 +120,13 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_list_things",
 		{
 			title: "List Things in Level",
-			description: `List every thing (item) currently attached to a level, with the thingId that things_delete_from_level requires alongside the item text. Use this to enumerate a level — pools_search needs a search term and cannot return everything. ${ID_GLOSSARY}`,
+			description:
+				"List everything in a level. Each item carries both its thingId and its learnableId; use thingId to delete. This is how you enumerate a level, since pools_search always needs a search term.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
 			},
 			annotations: {
 				readOnlyHint: true,
@@ -142,7 +144,7 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_get_items_by_number",
 		{
 			title: "Get Level Items by Number",
-			description: `Get the items in a level, chosen by the level number shown in the Memrise editor (1-based). Each item comes back with both its learnableId and its thingId. Asking for a number that has no items is an error listing the numbers that do. ${ID_GLOSSARY}`,
+			description: `Get the items in a level, chosen by the level number shown in the Memrise editor (1-based). Each item comes back with both its learnableId and its thingId. Asking for a number that has no items is an error listing the numbers that do.`,
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				levelNumber: z

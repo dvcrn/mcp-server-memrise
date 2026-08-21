@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
-import { ID_GLOSSARY, normalizeLearnable } from "../ids";
+import { normalizeLearnable } from "../ids";
 import { jsonResult } from "../results";
 
 export function registerCourseTools(server: McpServer): void {
@@ -43,16 +43,16 @@ export function registerCourseTools(server: McpServer): void {
 			title: "Get Memrise Course by ID",
 			description: "Get a course from your dashboard by its ID.",
 			inputSchema: {
-				id: z.union([z.string(), z.number()]).describe("Course ID."),
+				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 			},
 			annotations: {
 				readOnlyHint: true,
 			},
 		},
-		async ({ id }) =>
+		async ({ courseId }) =>
 			jsonResult(
 				(await withMemrise((client) =>
-					client.getCourseById(id),
+					client.getCourseById(courseId),
 				)) as unknown as Record<string, unknown>,
 			),
 	);
@@ -84,16 +84,16 @@ export function registerCourseTools(server: McpServer): void {
 			description:
 				"Show the columns a course uses, with their names and numeric keys. Add and search tools accept either form, so this is for inspection rather than a required first step.",
 			inputSchema: {
-				id: z.union([z.string(), z.number()]).describe("Course ID."),
+				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 			},
 			annotations: {
 				readOnlyHint: true,
 			},
 		},
-		async ({ id }) =>
+		async ({ courseId }) =>
 			jsonResult(
 				(await withMemrise((client) =>
-					client.getCourseColumns(id),
+					client.getCourseColumns(courseId),
 				)) as unknown as Record<string, unknown>,
 			),
 	);
@@ -102,9 +102,10 @@ export function registerCourseTools(server: McpServer): void {
 		"courses_get_items",
 		{
 			title: "Get Course Items",
-			description: `Get all learnable items for a course. Returns learnableIds, NOT thingIds — you cannot pass these to things_delete_from_level. ${ID_GLOSSARY}`,
+			description:
+				"Get every item in a course, across all levels. Each item carries both its learnableId and its thingId. Prefer levels_list_things when you only need one level.",
 			inputSchema: {
-				id: z.union([z.string(), z.number()]).describe("Course ID."),
+				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				limit: z
 					.number()
 					.int()
@@ -116,9 +117,9 @@ export function registerCourseTools(server: McpServer): void {
 				readOnlyHint: true,
 			},
 		},
-		async ({ id, limit }) => {
+		async ({ courseId, limit }) => {
 			const items = await withMemrise((client) =>
-				client.getCourseItems(id, limit),
+				client.getCourseItems(courseId, limit),
 			);
 			return jsonResult(items.map(normalizeLearnable));
 		},

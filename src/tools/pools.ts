@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
-import { ID_GLOSSARY, normalizeSearchHit } from "../ids";
+import { normalizeSearchHit } from "../ids";
 import { jsonResult } from "../results";
 
 export function registerPoolTools(server: McpServer): void {
@@ -30,7 +30,7 @@ export function registerPoolTools(server: McpServer): void {
 		"pools_search",
 		{
 			title: "Search Pool",
-			description: `Search a pool for matching items, e.g. to avoid adding duplicates. Returns thingIds. Search terms are given per column, by name or numeric key ({'Word': 'Hola'}). This is a filtered search only: Memrise has no 'return everything' mode, so at least one term is required. To list a whole level, use levels_list_things. ${ID_GLOSSARY}`,
+			description: `Search a pool for matching items, e.g. to avoid adding duplicates. Returns thingIds. Search terms are given per column, by name or numeric key ({'Word': 'Hola'}). This is a filtered search only: Memrise has no 'return everything' mode, so at least one term is required. To list a whole level, use levels_list_things.`,
 			inputSchema: {
 				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
 				columns: z
@@ -42,24 +42,14 @@ export function registerPoolTools(server: McpServer): void {
 					.describe(
 						"Columns to search, at least one non-empty. e.g. {'Word': 'hola'}",
 					),
-				excludeThingIds: z
-					.array(z.string())
-					.optional()
-					.describe("Exclude specific thing IDs."),
-				originalOnly: z.boolean().optional().describe("Search original only."),
 			},
 			annotations: {
 				readOnlyHint: true,
 			},
 		},
-		async ({ poolId, columns, excludeThingIds, originalOnly }) => {
+		async ({ poolId, columns }) => {
 			const res = await withMemrise((client) =>
-				client.searchPool(
-					poolId,
-					columns,
-					excludeThingIds ?? [],
-					originalOnly ?? false,
-				),
+				client.searchPool(poolId, columns),
 			);
 			return jsonResult(res.result.map(normalizeSearchHit));
 		},

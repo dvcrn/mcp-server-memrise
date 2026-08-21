@@ -46,8 +46,8 @@ export interface NormalizedSearchHit {
 	columns: Record<string, { val: string }>;
 }
 
-export const ID_GLOSSARY =
-	"Every response gives you both IDs, so read the one the tool asks for by name rather than converting. thingId identifies a row you can add or delete; learnableId identifies that row as tested in a particular direction.";
+export const LEVEL_ID_HINT =
+	"levelId is a large number from levels_list, not a small position like 1 or 2.";
 
 export function normalizeLevel(level: CourseLevel): NormalizedLevel {
 	return {
