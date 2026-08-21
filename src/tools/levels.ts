@@ -116,17 +116,18 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_list_things",
 		{
 			title: "List Things in Level",
-			description: `List every thing (item) currently attached to a level, with its thingId and column values. This is the only way to enumerate a level's items — pools_search needs a search term and cannot return everything. Use this to find the thingId that things_delete_from_level requires. ${ID_GLOSSARY}`,
+			description: `List every thing (item) currently attached to a level, with the thingId that things_delete_from_level requires alongside the item text. Use this to enumerate a level — pools_search needs a search term and cannot return everything. ${ID_GLOSSARY}`,
 			inputSchema: {
+				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 			},
 			annotations: {
 				readOnlyHint: true,
 			},
 		},
-		async ({ levelId }) => {
+		async ({ courseId, levelId }) => {
 			const things = await withMemrise((client) =>
-				client.getLevelThings(levelId),
+				client.getLevelThings(courseId, levelId),
 			);
 			return jsonResult(things.map(normalizeLevelThing));
 		},

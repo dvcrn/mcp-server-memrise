@@ -32,8 +32,11 @@ export interface NormalizedThing {
 
 export interface NormalizedLevelThing {
 	thingId: number;
-	columns: Record<string, string>;
-	attributes: Record<string, string>;
+	learnableId: number;
+	learningElement: string;
+	definitionElement: string;
+	itemType: string;
+	difficulty: string;
 }
 
 export interface NormalizedSearchHit {
@@ -42,7 +45,7 @@ export interface NormalizedSearchHit {
 }
 
 export const ID_GLOSSARY =
-	"learnableId = course/review-facing item identity (from levels_list, *_get_items, learnables_get). thingId = pool-authoring identity (from pools_search, things_add_to_level, things_bulk_add_*). They are different namespaces and are NOT interchangeable.";
+	"learnableId = course/review-facing item identity (from levels_list, *_get_items, learnables_get). thingId = pool-authoring identity (from levels_list_things, pools_search, things_add_to_level, things_bulk_add_*). A learnableId is a thing plus the column pair being tested, so levels_list_things can map one to the other; do not assume the two IDs are interchangeable yourself.";
 
 export function normalizeLevel(level: CourseLevel): NormalizedLevel {
 	return {
@@ -76,11 +79,7 @@ export function normalizeThing(thing: MemriseThing): NormalizedThing {
 }
 
 export function normalizeLevelThing(thing: LevelThing): NormalizedLevelThing {
-	return {
-		thingId: thing.id,
-		columns: thing.columns,
-		attributes: thing.attributes,
-	};
+	return { ...thing };
 }
 
 export function normalizeSearchHit(hit: {

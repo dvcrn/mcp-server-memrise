@@ -5,7 +5,6 @@ import { withMemrise } from "../client";
 import {
 	ID_GLOSSARY,
 	normalizeLearnable,
-	normalizeLevelThing,
 	normalizeThing,
 } from "../ids";
 import { jsonResult } from "../results";
@@ -188,8 +187,11 @@ export function registerThingTools(server: McpServer): void {
 		"things_delete_from_level",
 		{
 			title: "Delete Thing from Level",
-			description: `Remove a thing (item) from a specific level. Requires a thingId (from levels_list_things, pools_search or things_add_to_level) — passing a learnableId will fail. Verifies the thing is in the level before deleting and confirms removal after, so a reported success means the item is really gone. ${ID_GLOSSARY}`,
+			description: `Remove a thing (item) from a specific level. Requires a thingId (from levels_list_things, pools_search or things_add_to_level) — passing a learnableId will fail. Confirms the thing is in the level before deleting and that it is gone afterwards, so a reported success means the item is really gone. ${ID_GLOSSARY}`,
 			inputSchema: {
+				courseId: z
+					.union([z.string(), z.number()])
+					.describe("Course ID owning the level. Used to verify the delete."),
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				thingId: z
 					.union([z.string(), z.number()])
@@ -201,22 +203,21 @@ export function registerThingTools(server: McpServer): void {
 				idempotentHint: false,
 			},
 		},
-		async ({ levelId, thingId }) => {
+		async ({ courseId, levelId, thingId }) => {
 			const wanted = String(thingId);
 			const result = await withMemrise(async (client) => {
-				const before = await client.getLevelThings(levelId);
-				const target = before.find((t) => String(t.id) === wanted);
-				if (!target) {
+				const before = await client.getLevelThingIds(courseId, levelId);
+				if (!before.some((id) => String(id) === wanted)) {
 					throw new Error(
 						`thingId ${wanted} is not in level ${levelId}. Nothing was deleted. If you passed a learnableId, it will not work here — find the thingId via levels_list_things. ${ID_GLOSSARY}`,
 					);
 				}
 
+				// Delete by the caller's thingId, never a derived one.
 				const response = await client.deleteThingFromLevel(levelId, thingId);
 
-				const after = await client.getLevelThings(levelId);
-				const stillPresent = after.some((t) => String(t.id) === wanted);
-				if (stillPresent) {
+				const after = await client.getLevelThingIds(courseId, levelId);
+				if (after.some((id) => String(id) === wanted)) {
 					throw new Error(
 						`Delete reported ${JSON.stringify(response.success)} but thingId ${wanted} is still in level ${levelId}. The item was NOT removed.`,
 					);
@@ -225,7 +226,7 @@ export function registerThingTools(server: McpServer): void {
 				return {
 					success: true as const,
 					verified: true as const,
-					deleted: normalizeLevelThing(target),
+					deletedThingId: Number(thingId),
 					levelCountBefore: before.length,
 					levelCountAfter: after.length,
 				};
