@@ -140,37 +140,4 @@ export function registerLevelTools(server: McpServer): void {
 		},
 	);
 
-	server.registerTool(
-		"levels_get_items_by_number",
-		{
-			title: "Get Level Items by Number",
-			description: `Get the items in a level, chosen by the level number shown in the Memrise editor (1-based). Each item comes back with both its learnableId and its thingId. Asking for a number that has no items is an error listing the numbers that do.`,
-			inputSchema: {
-				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				levelNumber: z
-					.number()
-					.int()
-					.positive()
-					.optional()
-					.describe(
-						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
-					),
-				limit: z
-					.number()
-					.int()
-					.positive()
-					.optional()
-					.describe("Limit number of items to fetch."),
-			},
-			annotations: {
-				readOnlyHint: true,
-			},
-		},
-		async ({ courseId, levelNumber, limit }) => {
-			const items = await withMemrise((client) =>
-				client.getLevelItems(courseId, levelNumber ?? 1, limit),
-			);
-			return jsonResult(items.map(normalizeLearnable));
-		},
-	);
 }

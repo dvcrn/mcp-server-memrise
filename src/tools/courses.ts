@@ -10,31 +10,32 @@ export function registerCourseTools(server: McpServer): void {
 		{
 			title: "List Memrise Courses",
 			description:
-				"List the courses on your Memrise dashboard, with their course IDs. Start here when you only know a course by name.",
+				"List every course on your Memrise dashboard with its courseId. Start here when you only know a course by name.",
 			inputSchema: {
 				limit: z
 					.number()
 					.int()
 					.positive()
 					.optional()
-					.describe("Number of courses to return. Defaults to 9."),
-				offset: z
-					.number()
-					.int()
-					.nonnegative()
-					.optional()
-					.describe("Pagination offset. Defaults to 0."),
+					.describe("Cap the number returned. Defaults to all of them."),
 			},
 			annotations: {
 				readOnlyHint: true,
 			},
 		},
-		async ({ limit, offset }) =>
-			jsonResult(
-				(await withMemrise((client) =>
-					client.getMyCourses(limit ?? 9, offset ?? 0),
-				)) as unknown as Record<string, unknown>,
-			),
+		async ({ limit }) => {
+			const courses = await withMemrise((client) =>
+				client.getAllMyCourses(limit),
+			);
+			return jsonResult(
+				courses.map((course) => ({
+					courseId: course.id,
+					name: course.name,
+					slug: course.slug,
+					itemCount: course.progress?.size,
+				})),
+			);
+		},
 	);
 
 	server.registerTool(

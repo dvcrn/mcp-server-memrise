@@ -52,37 +52,6 @@ export function registerThingTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"things_add_by_level_number",
-		{
-			title: "Add Thing by Level Number",
-			description:
-				"Add one thing (item) to a course, choosing the level by the number Memrise shows in the editor. Columns may be given by name or numeric key.",
-			inputSchema: {
-				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				columns: z.record(z.string()).describe("Column values, by name or numeric key."),
-				levelNumber: z
-					.number()
-					.int()
-					.positive()
-					.optional()
-					.describe(
-						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
-					),
-			},
-			annotations: {
-				readOnlyHint: false,
-				idempotentHint: false,
-			},
-		},
-		async ({ courseId, columns, levelNumber }) => {
-			const res = await withMemrise((client) =>
-				client.addThingToCourse(courseId, columns, levelNumber ?? 1),
-			);
-			return jsonResult({ success: res.success, ...normalizeThing(res.thing) });
-		},
-	);
-
-	server.registerTool(
 		"things_bulk_add_to_level",
 		{
 			title: "Bulk Add Things to Level",
@@ -101,37 +70,6 @@ export function registerThingTools(server: McpServer): void {
 		async ({ levelId, items }) => {
 			const res = await withMemrise((client) =>
 				client.bulkAddToLevel(levelId, items),
-			);
-			return bulkAddResult(res);
-		},
-	);
-
-	server.registerTool(
-		"things_bulk_add_by_level_number",
-		{
-			title: "Bulk Add Things by Level Number",
-			description:
-				"Add many things (items) to a course in one request, choosing the level by the number Memrise shows in the editor. Columns may be given by name or numeric key.",
-			inputSchema: {
-				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				items: bulkItemsSchema,
-				levelNumber: z
-					.number()
-					.int()
-					.positive()
-					.optional()
-					.describe(
-						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
-					),
-			},
-			annotations: {
-				readOnlyHint: false,
-				idempotentHint: false,
-			},
-		},
-		async ({ courseId, items, levelNumber }) => {
-			const res = await withMemrise((client) =>
-				client.bulkAddToCourse(courseId, items, levelNumber ?? 1),
 			);
 			return bulkAddResult(res);
 		},
