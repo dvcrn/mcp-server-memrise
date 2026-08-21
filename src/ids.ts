@@ -1,4 +1,9 @@
-import type { CourseLevel, Learnable, MemriseThing } from "memrise/dist/types";
+import type {
+	CourseLevel,
+	Learnable,
+	LevelThing,
+	MemriseThing,
+} from "memrise/dist/types";
 
 export interface NormalizedLevel {
 	levelId: number;
@@ -23,6 +28,12 @@ export interface NormalizedThing {
 	poolId: number;
 	columns: Record<string, unknown>;
 	attributes: Record<string, unknown>;
+}
+
+export interface NormalizedLevelThing {
+	thingId: number;
+	columns: Record<string, string>;
+	attributes: Record<string, string>;
 }
 
 export interface NormalizedSearchHit {
@@ -59,6 +70,14 @@ export function normalizeThing(thing: MemriseThing): NormalizedThing {
 	return {
 		thingId: thing.id,
 		poolId: thing.pool_id,
+		columns: thing.columns,
+		attributes: thing.attributes,
+	};
+}
+
+export function normalizeLevelThing(thing: LevelThing): NormalizedLevelThing {
+	return {
+		thingId: thing.id,
 		columns: thing.columns,
 		attributes: thing.attributes,
 	};

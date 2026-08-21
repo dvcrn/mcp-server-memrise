@@ -30,12 +30,18 @@ export function registerPoolTools(server: McpServer): void {
 		"pools_search",
 		{
 			title: "Search Pool",
-			description: `Search for items in a pool (e.g. to avoid duplicates). Returns thingIds, which are what things_delete_from_level requires. CRITICAL: You must search using numeric column keys (e.g., {'1': 'Hola'}). Fetch course columns with courses_get_columns first. ${ID_GLOSSARY}`,
+			description: `Search for items in a pool (e.g. to avoid duplicates). Returns thingIds, which are what things_delete_from_level requires. CRITICAL: You must search using numeric column keys (e.g., {'1': 'Hola'}). Fetch course columns with courses_get_columns first. This is a filtered search only — Memrise has no 'return everything' mode, so at least one column value is required and an empty filter is rejected. To list a whole level, use levels_list_things. ${ID_GLOSSARY}`,
 			inputSchema: {
 				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
 				columns: z
-					.record(z.string())
-					.describe("Columns to search for. e.g. {'1': 'hola'}"),
+					.record(z.string().min(1))
+					.refine((value) => Object.keys(value).length > 0, {
+						message:
+							"At least one column is required. Memrise cannot search a pool without a term — use levels_list_things to enumerate a level.",
+					})
+					.describe(
+						"Columns to search for, at least one non-empty. e.g. {'1': 'hola'}",
+					),
 				excludeThingIds: z
 					.array(z.string())
 					.optional()

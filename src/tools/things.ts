@@ -5,7 +5,7 @@ import { withMemrise } from "../client";
 import {
 	ID_GLOSSARY,
 	normalizeLearnable,
-	normalizeSearchHit,
+	normalizeLevelThing,
 	normalizeThing,
 } from "../ids";
 import { jsonResult } from "../results";
@@ -188,17 +188,12 @@ export function registerThingTools(server: McpServer): void {
 		"things_delete_from_level",
 		{
 			title: "Delete Thing from Level",
-			description: `Remove a thing (item) from a specific level. Requires a thingId (from pools_search or things_add_to_level) — passing a learnableId will fail. Verifies the thing exists in the level's pool before deleting and confirms removal after, so a reported success means the item is really gone. ${ID_GLOSSARY}`,
+			description: `Remove a thing (item) from a specific level. Requires a thingId (from levels_list_things, pools_search or things_add_to_level) — passing a learnableId will fail. Verifies the thing is in the level before deleting and confirms removal after, so a reported success means the item is really gone. ${ID_GLOSSARY}`,
 			inputSchema: {
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				thingId: z
 					.union([z.string(), z.number()])
 					.describe("Thing ID (NOT a learnable ID)."),
-				poolId: z
-					.union([z.string(), z.number()])
-					.describe(
-						"Pool ID backing the level (from levels_list). Used to verify the delete actually happened.",
-					),
 			},
 			annotations: {
 				destructiveHint: true,
@@ -206,35 +201,33 @@ export function registerThingTools(server: McpServer): void {
 				idempotentHint: false,
 			},
 		},
-		async ({ levelId, thingId, poolId }) => {
+		async ({ levelId, thingId }) => {
 			const wanted = String(thingId);
 			const result = await withMemrise(async (client) => {
-				const before = await client.searchPool(poolId, {}, [], false);
-				const target = before.result.find((r) => String(r.id) === wanted);
+				const before = await client.getLevelThings(levelId);
+				const target = before.find((t) => String(t.id) === wanted);
 				if (!target) {
 					throw new Error(
-						`thingId ${wanted} is not in pool ${poolId}. Nothing was deleted. If you passed a learnableId, it will not work here — find the thingId via pools_search. ${ID_GLOSSARY}`,
+						`thingId ${wanted} is not in level ${levelId}. Nothing was deleted. If you passed a learnableId, it will not work here — find the thingId via levels_list_things. ${ID_GLOSSARY}`,
 					);
 				}
 
 				const response = await client.deleteThingFromLevel(levelId, thingId);
 
-				const after = await client.searchPool(poolId, {}, [], false);
-				const stillPresent = after.result.some(
-					(r) => String(r.id) === wanted,
-				);
+				const after = await client.getLevelThings(levelId);
+				const stillPresent = after.some((t) => String(t.id) === wanted);
 				if (stillPresent) {
 					throw new Error(
-						`Delete reported ${JSON.stringify(response.success)} but thingId ${wanted} is still present in pool ${poolId}. The item was NOT removed.`,
+						`Delete reported ${JSON.stringify(response.success)} but thingId ${wanted} is still in level ${levelId}. The item was NOT removed.`,
 					);
 				}
 
 				return {
 					success: true as const,
 					verified: true as const,
-					deleted: normalizeSearchHit(target),
-					poolCountBefore: before.result.length,
-					poolCountAfter: after.result.length,
+					deleted: normalizeLevelThing(target),
+					levelCountBefore: before.length,
+					levelCountAfter: after.length,
 				};
 			});
 			return jsonResult(result);

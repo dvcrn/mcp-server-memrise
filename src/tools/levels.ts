@@ -1,7 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { withMemrise } from "../client";
-import { ID_GLOSSARY, normalizeLearnable, normalizeLevel } from "../ids";
+import {
+	ID_GLOSSARY,
+	normalizeLearnable,
+	normalizeLevel,
+	normalizeLevelThing,
+} from "../ids";
 import { jsonResult } from "../results";
 
 export function registerLevelTools(server: McpServer): void {
@@ -105,6 +110,26 @@ export function registerLevelTools(server: McpServer): void {
 					client.deleteLevel(levelId),
 				)) as unknown as Record<string, unknown>,
 			),
+	);
+
+	server.registerTool(
+		"levels_list_things",
+		{
+			title: "List Things in Level",
+			description: `List every thing (item) currently attached to a level, with its thingId and column values. This is the only way to enumerate a level's items — pools_search needs a search term and cannot return everything. Use this to find the thingId that things_delete_from_level requires. ${ID_GLOSSARY}`,
+			inputSchema: {
+				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
+			},
+			annotations: {
+				readOnlyHint: true,
+			},
+		},
+		async ({ levelId }) => {
+			const things = await withMemrise((client) =>
+				client.getLevelThings(levelId),
+			);
+			return jsonResult(things.map(normalizeLevelThing));
+		},
 	);
 
 	server.registerTool(
