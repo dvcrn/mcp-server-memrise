@@ -225,7 +225,15 @@ export function registerThingTools(server: McpServer): void {
 				// Delete by the caller's thingId, never a derived one.
 				const response = await client.deleteThingFromLevel(levelId, thingId);
 
-				const after = await client.getLevelThingIds(courseId, levelId);
+				// Removing the last item empties the level, and the levels
+				// endpoint omits empty levels -- so a lookup failure here means
+				// the level is now empty, which is the outcome we wanted.
+				const after = await client
+					.getLevelThingIds(courseId, levelId)
+					.catch((error: unknown) => {
+						if (before.length === 1) return [];
+						throw error;
+					});
 				if (after.some((id) => String(id) === wanted)) {
 					throw new Error(
 						`Delete reported ${JSON.stringify(response.success)} but thingId ${wanted} is still in level ${levelId}. The item was NOT removed.`,

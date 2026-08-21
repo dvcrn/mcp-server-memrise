@@ -43,7 +43,7 @@ export function registerLevelTools(server: McpServer): void {
 		{
 			title: "Create Level",
 			description:
-				"Add a new level to a course. Resolve the course and pool IDs with courses_list or levels_list first.",
+				"Add a new level to a course and return its levelId, which the things_* tools need. Resolve the course and pool IDs with courses_list or levels_list first. A new level starts empty, so it will not appear in levels_list until it has items.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				poolId: z
@@ -62,12 +62,17 @@ export function registerLevelTools(server: McpServer): void {
 				idempotentHint: false,
 			},
 		},
-		async ({ courseId, poolId, kind }) =>
-			jsonResult(
-				(await withMemrise((client) =>
-					client.addLevelToCourse(courseId, poolId, kind),
-				)) as unknown as Record<string, unknown>,
-			),
+		async ({ courseId, poolId, kind }) => {
+			const res = await withMemrise((client) =>
+				client.addLevelToCourse(courseId, poolId, kind),
+			);
+			if (!res.levelId) {
+				throw new Error(
+					`Level creation reported ${JSON.stringify(res.success)} but no levelId came back. Use levels_list with includeEmpty to find it.`,
+				);
+			}
+			return jsonResult({ success: res.success, levelId: res.levelId });
+		},
 	);
 
 	server.registerTool(
