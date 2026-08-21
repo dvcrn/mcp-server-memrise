@@ -14,7 +14,7 @@ export function registerLevelTools(server: McpServer): void {
 		"levels_list",
 		{
 			title: "List Course Levels",
-			description: `List all levels in a course. Use this to discover exact levelIds, poolIds and learnableIds. Memrise Levels are backed by a Pool. Do not guess IDs. ${ID_GLOSSARY}`,
+			description: `List a course's levels with their levelIds, poolIds and level numbers. Start here to find the levelId other tools need. Levels with no items are omitted. ${ID_GLOSSARY}`,
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				slug: z.string().optional().describe("Optional course slug."),
@@ -43,7 +43,7 @@ export function registerLevelTools(server: McpServer): void {
 		{
 			title: "Create Level",
 			description:
-				"Add a new level to a course. Do not guess Course or Pool IDs. Use courses_list or levels_list to resolve exact IDs before calling this.",
+				"Add a new level to a course. Resolve the course and pool IDs with courses_list or levels_list first.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				poolId: z
@@ -134,18 +134,20 @@ export function registerLevelTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"levels_get_items_by_index",
+		"levels_get_items_by_number",
 		{
-			title: "Get Level Items by Index",
-			description: `Get items for a specific level by its index. Returns learnableIds, NOT thingIds — you cannot pass these to things_delete_from_level. WARNING: levelIndex skips empty levels, causing off-by-N errors. This tool is risky if a course has empty levels. ${ID_GLOSSARY}`,
+			title: "Get Level Items by Number",
+			description: `Get the items in a level, chosen by the level number shown in the Memrise editor (1-based). Each item comes back with both its learnableId and its thingId. Asking for a number that has no items is an error listing the numbers that do. ${ID_GLOSSARY}`,
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				levelIndex: z
+				levelNumber: z
 					.number()
 					.int()
-					.nonnegative()
+					.positive()
 					.optional()
-					.describe("Level index (0-based). Defaults to 0."),
+					.describe(
+						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
+					),
 				limit: z
 					.number()
 					.int()
@@ -157,9 +159,9 @@ export function registerLevelTools(server: McpServer): void {
 				readOnlyHint: true,
 			},
 		},
-		async ({ courseId, levelIndex, limit }) => {
+		async ({ courseId, levelNumber, limit }) => {
 			const items = await withMemrise((client) =>
-				client.getLevelItems(courseId, levelIndex ?? 0, limit),
+				client.getLevelItems(courseId, levelNumber ?? 1, limit),
 			);
 			return jsonResult(items.map(normalizeLearnable));
 		},

@@ -10,7 +10,7 @@ export function registerCourseTools(server: McpServer): void {
 		{
 			title: "List Memrise Courses",
 			description:
-				"List courses on your Memrise dashboard. Use this first to discover exact Course IDs. Do not guess IDs.",
+				"List the courses on your Memrise dashboard, with their course IDs. Start here when you only know a course by name.",
 			inputSchema: {
 				limit: z
 					.number()
@@ -82,7 +82,7 @@ export function registerCourseTools(server: McpServer): void {
 		{
 			title: "Get Course Columns",
 			description:
-				"Get the column configuration for a course. CRITICAL: Memrise uses numeric keys for columns (e.g., '1', '2'). You MUST use this tool to discover the numeric column mapping before adding items or searching pools.",
+				"Show the columns a course uses, with their names and numeric keys. Add and search tools accept either form, so this is for inspection rather than a required first step.",
 			inputSchema: {
 				id: z.union([z.string(), z.number()]).describe("Course ID."),
 			},

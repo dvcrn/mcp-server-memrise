@@ -1,3 +1,4 @@
+import { thingIdFromLearnableId } from "memrise";
 import type {
 	CourseLevel,
 	Learnable,
@@ -17,6 +18,7 @@ export interface NormalizedLevel {
 
 export interface NormalizedLearnable {
 	learnableId: number;
+	thingId: number;
 	learningElement: string;
 	definitionElement: string;
 	itemType: string;
@@ -45,7 +47,7 @@ export interface NormalizedSearchHit {
 }
 
 export const ID_GLOSSARY =
-	"learnableId = course/review-facing item identity (from levels_list, *_get_items, learnables_get). thingId = pool-authoring identity (from levels_list_things, pools_search, things_add_to_level, things_bulk_add_*). A learnableId is a thing plus the column pair being tested, so levels_list_things can map one to the other; do not assume the two IDs are interchangeable yourself.";
+	"Every response gives you both IDs, so read the one the tool asks for by name rather than converting. thingId identifies a row you can add or delete; learnableId identifies that row as tested in a particular direction.";
 
 export function normalizeLevel(level: CourseLevel): NormalizedLevel {
 	return {
@@ -62,6 +64,7 @@ export function normalizeLevel(level: CourseLevel): NormalizedLevel {
 export function normalizeLearnable(learnable: Learnable): NormalizedLearnable {
 	return {
 		learnableId: learnable.id,
+		thingId: thingIdFromLearnableId(learnable.id),
 		learningElement: learnable.learning_element,
 		definitionElement: learnable.definition_element,
 		itemType: learnable.item_type,

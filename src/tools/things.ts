@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { assertThingId } from "memrise";
 import type { BulkAddResponse } from "memrise/dist/types";
 import { z } from "zod";
 import { withMemrise } from "../client";
@@ -20,7 +21,7 @@ const bulkItemsSchema = z
 	.array(z.union([z.record(z.string()), z.array(z.string())]))
 	.min(1)
 	.describe(
-		"Items to add. Each item is a numeric-key record ({'1': 'hola', '2': 'hello'}) or an ordered value array (['hola', 'hello']). Call courses_get_columns first.",
+		"Items to add. Each item is a record keyed by column name or number ({'Word': 'hola', 'Definition': 'hello'}) or an ordered value array (['hola', 'hello']).",
 	);
 
 function bulkAddResult(res: BulkAddResponse) {
@@ -35,12 +36,12 @@ export function registerThingTools(server: McpServer): void {
 		"things_add_to_level",
 		{
 			title: "Add Thing to Level",
-			description: `Add a new thing (item) to a specific level by its ID. Returns the new thingId, which is what things_delete_from_level requires. CRITICAL: Memrise expects numeric keys for columns (e.g. '1', '2'), not strings like 'term'. You MUST call courses_get_columns first to map fields to numeric IDs. ${ID_GLOSSARY}`,
+			description: `Add one thing (item) to a level. Columns may be given by name ({'Word': 'hola'}) or by numeric key ({'1': 'hola'}); names are resolved for you. Returns the new thingId. ${ID_GLOSSARY}`,
 			inputSchema: {
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				columns: z
 					.record(z.string())
-					.describe("Item columns data. e.g. {'1': 'hola', '2': 'hello'}"),
+					.describe("Column values, by name or numeric key. e.g. {'Word': 'hola', 'Definition': 'hello'}"),
 			},
 			annotations: {
 				readOnlyHint: false,
@@ -56,29 +57,31 @@ export function registerThingTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"things_add_by_level_index",
+		"things_add_by_level_number",
 		{
-			title: "Add Thing by Level Index",
+			title: "Add Thing by Level Number",
 			description:
-				"Add a new thing (item) to a course at a specific level index. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call courses_get_columns first. WARNING: levelIndex skips empty levels, causing off-by-N errors. SAFER PATTERN: resolve exact levelId via levels_list and use things_add_to_level instead.",
+				"Add one thing (item) to a course, choosing the level by the number Memrise shows in the editor. Columns may be given by name or numeric key.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
-				columns: z.record(z.string()).describe("Item columns data."),
-				levelIndex: z
+				columns: z.record(z.string()).describe("Column values, by name or numeric key."),
+				levelNumber: z
 					.number()
 					.int()
-					.nonnegative()
+					.positive()
 					.optional()
-					.describe("Level index (0-based). Defaults to 0."),
+					.describe(
+						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
+					),
 			},
 			annotations: {
 				readOnlyHint: false,
 				idempotentHint: false,
 			},
 		},
-		async ({ courseId, columns, levelIndex }) => {
+		async ({ courseId, columns, levelNumber }) => {
 			const res = await withMemrise((client) =>
-				client.addThingToCourse(courseId, columns, levelIndex ?? 0),
+				client.addThingToCourse(courseId, columns, levelNumber ?? 1),
 			);
 			return jsonResult({ success: res.success, ...normalizeThing(res.thing) });
 		},
@@ -88,7 +91,7 @@ export function registerThingTools(server: McpServer): void {
 		"things_bulk_add_to_level",
 		{
 			title: "Bulk Add Things to Level",
-			description: `Add many things (items) to a specific level in one request. Returns thingIds, which are what things_delete_from_level requires. CRITICAL: Memrise expects numeric keys for columns (e.g. '1', '2'), not strings like 'term'. You MUST call courses_get_columns first to map fields to numeric IDs. Prefer this over calling things_add_to_level in a loop. ${ID_GLOSSARY}`,
+			description: `Add many things (items) to a level in one request. Prefer this over calling things_add_to_level in a loop. Columns may be given by name ({'Word': 'hola'}) or by numeric key. Returns the new thingIds. ${ID_GLOSSARY}`,
 			inputSchema: {
 				levelId: z.union([z.string(), z.number()]).describe("Level ID."),
 				items: bulkItemsSchema,
@@ -108,20 +111,22 @@ export function registerThingTools(server: McpServer): void {
 	);
 
 	server.registerTool(
-		"things_bulk_add_by_level_index",
+		"things_bulk_add_by_level_number",
 		{
-			title: "Bulk Add Things by Level Index",
+			title: "Bulk Add Things by Level Number",
 			description:
-				"Add many things (items) to a course at a specific level index in one request. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call courses_get_columns first. WARNING: levelIndex skips empty levels, causing off-by-N errors. SAFER PATTERN: resolve exact levelId via levels_list and use things_bulk_add_to_level instead.",
+				"Add many things (items) to a course in one request, choosing the level by the number Memrise shows in the editor. Columns may be given by name or numeric key.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				items: bulkItemsSchema,
-				levelIndex: z
+				levelNumber: z
 					.number()
 					.int()
-					.nonnegative()
+					.positive()
 					.optional()
-					.describe("Level index (0-based). Defaults to 0."),
+					.describe(
+						"Level number as shown in the Memrise editor (1-based). Defaults to 1.",
+					),
 				delimiter: bulkDelimiterSchema,
 			},
 			annotations: {
@@ -129,9 +134,9 @@ export function registerThingTools(server: McpServer): void {
 				idempotentHint: false,
 			},
 		},
-		async ({ courseId, items, levelIndex, delimiter }) => {
+		async ({ courseId, items, levelNumber, delimiter }) => {
 			const res = await withMemrise((client) =>
-				client.bulkAddToCourse(courseId, items, levelIndex ?? 0, delimiter),
+				client.bulkAddToCourse(courseId, items, levelNumber ?? 1, delimiter),
 			);
 			return bulkAddResult(res);
 		},
@@ -141,7 +146,7 @@ export function registerThingTools(server: McpServer): void {
 		"things_bulk_add_to_pool",
 		{
 			title: "Bulk Add Things to Pool",
-			description: `Add many things (items) to a pool database without attaching them to a level. Returns thingIds. CRITICAL: Must use numeric column keys (e.g., {'1': 'val'}). Call courses_get_columns first. Use things_bulk_add_to_level if the items should appear in a course level. ${ID_GLOSSARY}`,
+			description: `Add many things (items) to a pool without attaching them to any level. Use things_bulk_add_to_level if the items should appear in a lesson. Columns may be given by name or numeric key. ${ID_GLOSSARY}`,
 			inputSchema: {
 				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
 				items: bulkItemsSchema,
@@ -164,7 +169,7 @@ export function registerThingTools(server: McpServer): void {
 		"learnables_get",
 		{
 			title: "Get Learnable",
-			description: `Get a specific learnable item by its ID. Returns a learnableId, NOT a thingId — you cannot pass this to things_delete_from_level. ${ID_GLOSSARY}`,
+			description: `Get one learnable item by its learnableId. The response includes the matching thingId. ${ID_GLOSSARY}`,
 			inputSchema: {
 				learnableId: z
 					.union([z.string(), z.number()])
@@ -204,12 +209,16 @@ export function registerThingTools(server: McpServer): void {
 			},
 		},
 		async ({ courseId, levelId, thingId }) => {
+			// Catch a learnableId here so the error can name the right thingId,
+			// rather than reporting a confusing "not in level".
+			assertThingId(Number(thingId), "things_delete_from_level");
+
 			const wanted = String(thingId);
 			const result = await withMemrise(async (client) => {
 				const before = await client.getLevelThingIds(courseId, levelId);
 				if (!before.some((id) => String(id) === wanted)) {
 					throw new Error(
-						`thingId ${wanted} is not in level ${levelId}. Nothing was deleted. If you passed a learnableId, it will not work here — find the thingId via levels_list_things. ${ID_GLOSSARY}`,
+						`thingId ${wanted} is not in level ${levelId}. Nothing was deleted. Use levels_list_things to see what is there. ${ID_GLOSSARY}`,
 					);
 				}
 
