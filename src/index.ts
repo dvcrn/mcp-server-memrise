@@ -9,7 +9,7 @@ import { registerThingTools } from "./tools/things";
 function createServer(): McpServer {
 	const server = new McpServer({
 		name: "memrise",
-		version: "0.4.0",
+		version: "0.5.0",
 	});
 
 	registerCourseTools(server);
