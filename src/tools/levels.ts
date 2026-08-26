@@ -121,7 +121,7 @@ export function registerLevelTools(server: McpServer): void {
 		{
 			title: "List Things in Level",
 			description:
-				"List everything in a level. Each item carries both its thingId and its learnableId; use thingId to delete. This is how you enumerate a level, since pools_search always needs a search term.",
+				"List everything in a level. Each item carries both its thingId and its learnableId; use thingId to detach, edit or delete an item. This is how you enumerate a level, since pools_search always needs a search term.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				levelId: z

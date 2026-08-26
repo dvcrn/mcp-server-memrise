@@ -53,5 +53,9 @@ Built on top of [`dvcrn/memcli`](https://github.com/dvcrn/memcli), this MCP serv
 - listing and fetching teaching courses
 - managing course levels (listing, creating, renaming, deleting)
 - inspecting course schema and column mappings
-- managing course items/learnables (adding/removing words on levels or courses, including bulk add)
+- managing course items/learnables (adding words to levels or courses, including bulk add)
+- editing existing items in place (correcting a word, definition or attribute)
+- detaching an item from one level, leaving the shared pool row for other levels
+- deleting a pool row outright, which removes it from every level at once
+- finding orphaned pool rows that no level uses, left behind by detaching
 - searching backend pools (to avoid duplicate items)

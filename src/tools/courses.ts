@@ -84,7 +84,7 @@ export function registerCourseTools(server: McpServer): void {
 		{
 			title: "Get Course Items",
 			description:
-				"Get every item in a course in one call, each tagged with the levelIds it belongs to, so a result can be passed straight to things_delete_from_level. Prefer levels_list_things when you only care about one level.",
+				"Get every item in a course in one call, each tagged with the levelIds it belongs to, so a result can be passed straight to things_detach_from_level, or checked for how many levels would lose a row to things_delete. Prefer levels_list_things when you only care about one level.",
 			inputSchema: {
 				courseId: z.union([z.string(), z.number()]).describe("Course ID."),
 				limit: z
