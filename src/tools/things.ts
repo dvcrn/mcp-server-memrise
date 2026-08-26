@@ -321,33 +321,4 @@ export function registerThingTools(server: McpServer): void {
 			return jsonResult(result);
 		},
 	);
-
-	server.registerTool(
-		"things_list_orphans",
-		{
-			title: "List Orphaned Things",
-			description:
-				"List a course's orphaned pool rows: items that exist in the pool but are attached to no level, which is what detaching an item from its last level leaves behind. They are invisible to levels_list_things and pools_search, and things_delete is what clears them. SLOW: this scrapes the editor's database pages, roughly one request per 20 pool rows, so a large course takes many requests. Returns each row's thingId and its column values in column order.",
-			inputSchema: {
-				courseId: z
-					.union([z.string(), z.number()])
-					.describe("Course ID whose pool to scan."),
-			},
-			annotations: {
-				readOnlyHint: true,
-			},
-		},
-		async ({ courseId }) => {
-			const orphans = await withMemrise((client) =>
-				client.findOrphanedThings(courseId),
-			);
-			return jsonResult({
-				count: orphans.length,
-				orphans: orphans.map((thing) => ({
-					thingId: Number(thing.thingId),
-					values: thing.values,
-				})),
-			});
-		},
-	);
 }

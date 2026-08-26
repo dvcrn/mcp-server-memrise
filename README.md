@@ -57,5 +57,4 @@ Built on top of [`dvcrn/memcli`](https://github.com/dvcrn/memcli), this MCP serv
 - editing existing items in place (correcting a word, definition or attribute)
 - detaching an item from one level, leaving the shared pool row for other levels
 - deleting a pool row outright, which removes it from every level at once
-- finding orphaned pool rows that no level uses, left behind by detaching
 - searching backend pools (to avoid duplicate items)
