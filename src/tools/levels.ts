@@ -117,6 +117,47 @@ export function registerLevelTools(server: McpServer): void {
 	);
 
 	server.registerTool(
+		"levels_set_column_pair",
+		{
+			title: "Set Level Test Columns",
+			description:
+				"Set which pool columns a level prompts with and tests on. This is level-scoped, not pool-scoped: levels sharing a pool can test different pairs, and it does not show up in pools_get. To read the current pair, take any learnableId from levels_list: the prompt column is (learnableId % 65536) >> 8 and the tested column is learnableId % 256. Columns are given by numeric key; pools_get lists the keys and their labels. Changing the pair regenerates every learnableId in the level, so re-read it afterwards.",
+			inputSchema: {
+				levelId: z
+					.union([z.string(), z.number()])
+					.describe(`Level ID. ${LEVEL_ID_HINT}`),
+				promptWithColumn: z
+					.number()
+					.int()
+					.positive()
+					.describe(
+						"Column key the learner is prompted with, e.g. 1 for the word column.",
+					),
+				testOnColumn: z
+					.number()
+					.int()
+					.positive()
+					.describe(
+						"Column key the learner is tested on, e.g. 2 for the definition column.",
+					),
+			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: true,
+			},
+		},
+		async ({ levelId, promptWithColumn, testOnColumn }) =>
+			jsonResult(
+				(await withMemrise((client) =>
+					client.setLevelColumnPair(levelId, {
+						learningColumn: promptWithColumn,
+						definitionColumn: testOnColumn,
+					}),
+				)) as unknown as Record<string, unknown>,
+			),
+	);
+
+	server.registerTool(
 		"levels_list_things",
 		{
 			title: "List Things in Level",

@@ -27,6 +27,74 @@ export function registerPoolTools(server: McpServer): void {
 	);
 
 	server.registerTool(
+		"pools_set_column_settings",
+		{
+			title: "Set Pool Column Settings",
+			description:
+				"Update a pool column's display and testing settings. Applies to every level sharing the pool. Omitted fields keep their current value. To change which columns a level tests, use levels_set_column_pair instead.",
+			inputSchema: {
+				poolId: z.union([z.string(), z.number()]).describe("Pool ID."),
+				column: z
+					.union([z.string(), z.number()])
+					.describe("Column, by label or numeric key. e.g. 'Word' or 1."),
+				label: z
+					.string()
+					.min(1)
+					.optional()
+					.describe(
+						"New column label. Renames the column across every level sharing the pool, and anything referring to it by the old name stops resolving.",
+					),
+				keyboard: z
+					.string()
+					.optional()
+					.describe(
+						"Characters forming the on-screen keyboard, e.g. 'abc def' where a space wraps to a new row. Empty string means the learner's own keyboard.",
+					),
+				showBigger: z
+					.boolean()
+					.optional()
+					.describe("Render the text larger, e.g. for Chinese."),
+				neverItalicize: z
+					.boolean()
+					.optional()
+					.describe("Keep the text upright in contexts that italicize it."),
+				typingDisabled: z
+					.boolean()
+					.optional()
+					.describe("Suppress typing tests for this column."),
+				tappingDisabled: z
+					.boolean()
+					.optional()
+					.describe("Suppress tapping ('rearrange the words') tests."),
+				typingStrict: z
+					.boolean()
+					.optional()
+					.describe(
+						"Mark typing without ignoring spacing, capitalization or accents.",
+					),
+				alwaysShow: z
+					.boolean()
+					.optional()
+					.describe("Display the column even when it is not tested on."),
+				showAfterTests: z
+					.boolean()
+					.optional()
+					.describe("Display the column after a test."),
+			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: true,
+			},
+		},
+		async ({ poolId, column, ...settings }) =>
+			jsonResult(
+				(await withMemrise((client) =>
+					client.setPoolColumnSettings(poolId, column, settings),
+				)) as unknown as Record<string, unknown>,
+			),
+	);
+
+	server.registerTool(
 		"pools_search",
 		{
 			title: "Search Pool",
