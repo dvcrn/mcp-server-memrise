@@ -179,7 +179,7 @@ export function registerThingTools(server: McpServer): void {
 		{
 			title: "Get Thing",
 			description:
-				"Read one item by thingId, with every column and attribute \u2014 not just the pair a level tests. Use this to see current values before things_update.",
+				"Read one item by thingId, with every column and attribute \u2014 not just the pair a level tests. Use this to see current values before things_update, and each column's current alternatives before things_set_alts.",
 			inputSchema: {
 				thingId: z
 					.union([z.string(), z.number()])
@@ -194,6 +194,54 @@ export function registerThingTools(server: McpServer): void {
 			const res = await withMemrise((client) => client.getThing(thingId));
 			if (!res?.thing) throw new Error(`Thing ${thingId} not found.`);
 			return jsonResult(normalizeThing(res.thing));
+		},
+	);
+
+	server.registerTool(
+		"things_set_alts",
+		{
+			title: "Set Thing Alternatives",
+			description:
+				"Replace the alternative answers for one column of an item. Alternatives are also accepted as correct answers on tests, and are shown when clicking \"More\" on presentations. To accept something as a correct answer but hide it from presentations, start it with an underscore, e.g. \"_cat\". The list is an overwrite, not an append: pass every alternative the column should keep, or an empty list to clear them. Read the current ones with things_get first if you mean to add to them. Columns only \u2014 attributes have no alternatives. Requires a thingId, from levels_list_things or an add call \u2014 a learnableId is rejected. The column is read back afterwards, so success means the alternatives are really set.",
+			inputSchema: {
+				thingId: z
+					.union([z.string(), z.number()])
+					.describe("Thing ID (NOT a learnable ID)."),
+				column: z
+					.union([z.string(), z.number()])
+					.describe("Column to set the alternatives on, by name ('Word') or numeric key (1)."),
+				alts: z
+					.array(z.string().min(1))
+					.describe(
+						"The complete list of alternatives, replacing whatever is there. Prefix one with '_' to accept it but hide it from presentations. Empty list clears them.",
+					),
+				poolId: z
+					.union([z.string(), z.number()])
+					.optional()
+					.describe(
+						"Pool the item belongs to, from levels_list. Optional, and only used when the column is named: it saves the request that would otherwise look the pool up. Memrise rate-limits the account, so pass it when you have it.",
+					),
+			},
+			annotations: {
+				readOnlyHint: false,
+				idempotentHint: true,
+			},
+		},
+		async ({ thingId, column, alts, poolId }) => {
+			// Catch a learnableId here so the error can name the right thingId,
+			// rather than reporting a confusing "no such column".
+			assertThingId(Number(thingId), "things_set_alts");
+
+			const res = await withMemrise((client) =>
+				client.setThingAlts(thingId, column, alts, { poolId }),
+			);
+			return jsonResult({
+				success: res.success,
+				verified: res.verified,
+				thingId: Number(res.thingId),
+				columnKey: res.columnKey,
+				alts: res.alts,
+			});
 		},
 	);
 
