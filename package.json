@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.1",
-    "memrise": "^0.10.0",
+    "memrise": "^0.10.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -26,5 +26,9 @@
     "@types/node": "latest",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dvcrn/mcp-server-memrise.git"
   }
 }
